@@ -1,0 +1,3 @@
+import joblib
+model = joblib.load(r"C:\Users\khush\OneDrive\Desktop\fraud_model_compressed.pkl")
+
