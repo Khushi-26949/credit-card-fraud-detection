@@ -1,213 +1,182 @@
-# 🛡️ Credit Card Fraud Detection Web App
+# 🛡️ Credit Card Fraud Detection System
 
-A multi-page web application built with **Python & Streamlit** that detects fraudulent transactions using Machine Learning.
+![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-Web%20App-red?style=for-the-badge&logo=streamlit)
+![Machine Learning](https://img.shields.io/badge/ML-Scikit--learn-orange?style=for-the-badge&logo=scikit-learn)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge)
+
+> A full-stack fraud detection web application that analyzes financial transactions in real time using Machine Learning, with explainable AI reasoning, interactive dashboards, and secure user management.
 
 ---
 
-## 📌 Features
+## 📸 Preview
 
-- 🔐 **User Registration & Login** — Secure authentication with hashed passwords
-- ✅ **Form Validation** — Email format, 10-digit phone, password strength checks
-- 🚫 **Login Attempt Limit** — Account locks after 3 failed login attempts
-- 💳 **Fraud Detection** — ML model predicts if a transaction is fraudulent
-- 🤖 **XAI Reasoning** — Explains *why* a transaction looks suspicious
-- 🔥 **Risk Score Gauge** — Visual speedometer chart (Green → Yellow → Red)
-- 🔄 **Auto-Fill** — Random transaction from dataset for quick testing
-- ⏱️ **Timestamp** — Every transaction saved with date & time
-- 📊 **Interactive Dashboard** — Charts, filters, and personal transaction history
-- 📁 **Transaction History** — Every check is saved per user
-- 📄 **PDF Report Download** — Download full transaction history as PDF
-- 🔑 **Admin Panel** — Password protected panel to manage all users & data
+| Login & Auth | Fraud Detection | Dashboard |
+|---|---|---|
+| Secure login with attempt limiting | ML prediction + Risk Gauge | Plotly charts + PDF export |
+
+---
+
+## ✨ Key Features
+
+| Category | Feature |
+|---|---|
+| 🔐 **Authentication** | Register, Login, SHA-256 password hashing, session management |
+| 🚫 **Security** | Login attempt limiting (3 tries), page-level access control |
+| ✅ **Validation** | Email format, 10-digit phone, password strength checks |
+| 💳 **Fraud Detection** | Real-time ML prediction with auto-fill from dataset |
+| 🤖 **Explainable AI** | XAI reasoning — explains *why* a transaction is flagged |
+| 🔥 **Risk Score** | Visual gauge chart (Green → Yellow → Red, 0–100%) |
+| ⏱️ **Timestamps** | Every transaction saved with date & time |
+| 📊 **Dashboard** | Personal history, Plotly charts (Pie, Box, Line), Top-10 table |
+| 📄 **PDF Reports** | Download full transaction history as formatted PDF |
+| 🔑 **Admin Panel** | Password-protected panel to manage users & data |
 
 ---
 
 ## 🗂️ Project Structure
 
 ```
-fraud_detection/
+credit-card-fraud-detection/
 ├── app.py                        # Main app — Login, Register, Navigation
 ├── pages/
-│   ├── 1_Fraud_Detection.py      # Fraud prediction page
-│   ├── 2_Dashboard.py            # Dashboard & analytics page
+│   ├── 1_Fraud_Detection.py      # Fraud prediction + XAI + Risk Gauge
+│   ├── 2_Dashboard.py            # Analytics dashboard + PDF export
 │   └── Admin.py                  # Admin panel (password protected)
-├── fraud_model.pkl               # Trained ML model
-├── cleaned_fraud_dataset.xls     # Dataset used for auto-fill
-├── users.json                    # Stores registered users
-└── user_history.json             # Stores transaction history per user
+├── fraud_model.pkl               # Trained ML classification model
+├── cleaned_fraud_dataset.xls     # Dataset for auto-fill & analysis
+├── users.json                    # Registered user store
+├── user_history.json             # Per-user transaction history
+└── README.md
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Technology | Usage |
+| Technology | Purpose |
 |---|---|
-| Python | Core language |
-| Streamlit | Web app framework |
-| Scikit-learn / Joblib | ML model training & loading |
-| Pandas & NumPy | Data handling |
-| Plotly | Interactive charts & gauge |
-| Hashlib | Password hashing (SHA-256) |
-| FPDF2 | PDF report generation |
-| JSON | Data storage |
+| **Python 3.12** | Core language |
+| **Streamlit** | Multi-page web app framework |
+| **Scikit-learn + Joblib** | ML model training & deployment |
+| **Pandas + NumPy** | Data processing |
+| **Plotly** | Interactive charts & gauge visualization |
+| **FPDF2** | PDF report generation |
+| **Hashlib (SHA-256)** | Secure password hashing |
+| **JSON** | Lightweight data storage |
 
 ---
 
-## 🚀 How to Run
+## 🚀 Getting Started
 
-**Step 1 — Install dependencies**
+**1. Install dependencies**
 ```bash
 pip install streamlit pandas numpy plotly scikit-learn joblib fpdf2
 ```
 
-**Step 2 — Make sure these files are in your project folder**
+**2. Ensure these files exist in your project folder**
 ```
 app.py
 fraud_model.pkl
 cleaned_fraud_dataset.xls
-users.json
-user_history.json
-pages/1_Fraud_Detection.py
-pages/2_Dashboard.py
-pages/Admin.py
+users.json           ← should contain {}
+user_history.json    ← should contain {}
+pages/
+  ├── 1_Fraud_Detection.py
+  ├── 2_Dashboard.py
+  └── Admin.py
 ```
 
-**Step 3 — Run the app**
+**3. Run the app**
 ```bash
 streamlit run app.py
 ```
 
-**Step 4 — Open browser**
+**4. Open in browser**
 ```
 http://localhost:8501
 ```
 
 ---
 
-## 📖 How to Use
+## 📖 Usage Guide
 
 1. **Register** — Create account with name, valid email, 10-digit phone & password
-2. **Login** — Enter credentials and press Enter or click Login
-3. **Fraud Detection** — Enter transaction details or auto-fill from dataset
-4. **Check Result** — See prediction, risk score gauge, reasons & timestamp
-5. **Dashboard** — View personal transaction history, charts & download PDF report
-6. **Admin Panel** — Enter admin password to manage all users & data
+2. **Login** — Enter credentials and press `Enter` or click Login
+3. **Fraud Detection** — Enter transaction details manually or use Auto-Fill
+4. **View Result** — See prediction, XAI reasoning, risk score gauge & timestamp
+5. **Dashboard** — Explore personal history, analytics charts & download PDF report
+6. **Admin Panel** — Enter admin password to manage users and data
 
 ---
 
-## 🔒 Security Features
+## 🔒 Security Overview
 
-| Feature | Details |
+| Feature | Implementation |
 |---|---|
-| Password Hashing | SHA-256 encryption — passwords never stored as plain text |
-| Login Attempt Limit | Locked after 3 failed attempts |
-| Email Validation | Must follow valid email format (abc@gmail.com) |
-| Phone Validation | Must be exactly 10 digits |
-| Password Strength | Minimum 6 characters required |
-| Session Management | Login state maintained across pages |
-| Page Protection | All pages check login before loading |
-| Admin Panel | Password protected — only owner can access |
+| Password Storage | SHA-256 hashed — never stored as plain text |
+| Login Protection | Locked after 3 failed attempts |
+| Admin Access | Password hash verification |
+| Input Validation | Email regex, 10-digit phone, 6-char password minimum |
+| Session Control | `st.session_state` — persists across all pages |
+| Page Guard | Every page verifies login before rendering |
 
 ---
 
-## 🤖 ML Model Details
+## 🤖 ML Model
 
-- **Input Features:**
-  - Transaction Amount
-  - Transaction Hour
-  - Night Flag (transaction between 11PM–6AM)
-  - Device Changed Flag
-  - Location Mismatch Flag
-  - High Amount Flag (amount > ₹10,000)
+**Input Features**
 
-- **Output:**
-  - `1` → Fraudulent Transaction 🚨
-  - `0` → Safe Transaction ✅
+| Feature | Description |
+|---|---|
+| `amount` | Transaction amount (₹) |
+| `hour` | Hour of transaction (0–23) |
+| `night_flag` | 1 if transaction between 11PM–6AM |
+| `device_flag` | 1 if new/unrecognized device |
+| `location_flag` | 1 if location mismatch |
+| `high_amount_flag` | 1 if amount > ₹10,000 |
 
-- **Risk Score Breakdown:**
-  - 🌙 Night Transaction → +20%
-  - 📱 Device Changed → +20%
-  - 📍 Location Mismatch → +30%
-  - 💰 High Amount → +30%
+**Output:** `1` → Fraudulent 🚨 &nbsp;&nbsp;|&nbsp;&nbsp; `0` → Safe ✅
+
+**Risk Score Logic**
+
+```
+Night Transaction    → +20%
+Device Changed       → +20%
+Location Mismatch    → +30%
+High Amount          → +30%
+─────────────────────────────
+Max Risk Score       = 100%
+```
 
 ---
 
-## 🔑 Admin Panel
+## 🔄 System Workflow
 
-- View all registered users
-- See transaction count per user
-- View any user's transaction history
-- Delete specific user history
-- Delete any user account
-- Clear all data at once
-- Password protected access
-
----
-
-## 🔄 Complete Workflow
-
-### 1️⃣ Register / Login
 ```
-Open App → Go to Register Page
-↓
-Enter Name + Email + Phone + Password
-↓
-Validation → SHA-256 Hash → Saved in users.json
-↓
-Go to Login Page → Enter Correct Details → Session Saved → Home Page ✅
-```
-
-### 2️⃣ Fraud Detection
-```
-Fraud Detection Page
-↓
-Enter Manual values OR Auto-Fill from dataset
-↓
-"Predict Fraud Now" → Spinner → ML Model predicts
-↓
-XAI Reasoning + Risk Score Gauge Chart
-↓
-Result — FRAUD 🚨 or SAFE ✅
-↓
-Saved in user_history.json with Timestamp
-```
-
-### 3️⃣ Dashboard
-```
-Personal History → Total, Fraud, Safe count
-↓
-Download PDF Report
-↓
-Dataset Charts — Pie, Box, Line, Top 10 Table
-```
-
-### 4️⃣ Admin Panel
-```
-Admin Password → Overview (Users, Transactions, Fraud, Safe)
-↓
-All Users Table → View / Delete any user history
-↓
-Delete User → Clear All Data
-```
-
-### 🗂️ Data Flow
-```
-Register     → users.json
-Login        → session_state
-Fraud Check  → user_history.json
-Dashboard    → user_history.json + dataset
-Admin        → users.json + user_history.json
-PDF Report   → Generated from user_history.json
+User Registers ──► Validation ──► SHA-256 Hash ──► users.json
+     │
+     ▼
+   Login ──► Session Saved ──► Access Granted
+     │
+     ├──► Fraud Detection ──► ML Model ──► XAI + Gauge ──► user_history.json
+     │
+     ├──► Dashboard ──► History + Charts ──► PDF Download
+     │
+     └──► Admin Panel ──► Manage Users & Data
 ```
 
 ---
 
 ## 👥 Team
 
-Built as a group project for Hackathon.
+| Member | Contribution |
+|---|---|
+| **Khushi** | Web app development, authentication, dashboard, PDF reports, admin panel, XAI integration |
+| **Soni** | Dataset sourcing, data cleaning & preprocessing, feature engineering, ML model training (Jupyter Notebook) |
 
 ---
 
 ## 📜 License
 
-This project is for educational purposes only.
+This project is built for educational and hackathon purposes only.
