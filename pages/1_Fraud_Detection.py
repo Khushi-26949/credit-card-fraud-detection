@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import os
 import time
+import plotly.graph_objects as go
 from datetime import datetime
 
 # ---------------------------------------------------
@@ -169,8 +170,26 @@ if st.button("Predict Fraud Now"):
     for r in reasons:
         st.write("- " + r)
 
+    # -------------------- RISK SCORE + GAUGE --------------------
     st.markdown(f"### 🔥 Risk Score: **{risk_score}%**")
 
+    fig_gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk_score,
+        title={"text": "Risk Score"},
+        gauge={
+            "axis": {"range": [0, 100]},
+            "bar": {"color": "red" if risk_score > 50 else "orange" if risk_score > 20 else "green"},
+            "steps": [
+                {"range": [0, 30], "color": "#d4edda"},
+                {"range": [30, 60], "color": "#fff3cd"},
+                {"range": [60, 100], "color": "#f8d7da"},
+            ],
+        }
+    ))
+    st.plotly_chart(fig_gauge, use_container_width=True)
+
+    # -------------------- RESULT --------------------
     if prediction == 1:
         st.error("⚠ Fraud Detected — This transaction looks suspicious.")
     else:
