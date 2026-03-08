@@ -152,11 +152,12 @@ elif page == "Admin":
     admin_pass = st.text_input("Enter Admin Password", type="password")
 
     if st.button("Access Admin Panel"):
-        if admin_pass == "2023":  # ← apna password yahan rakho
+        if hashlib.sha256(admin_pass.encode()).hexdigest() == "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec":  # ← apna password yahan rakho
             st.session_state.admin = True
             st.rerun()
         else:
             st.error("❌ Wrong Admin Password!")
 
     if st.session_state.get("admin"):
+
         st.switch_page("pages/Admin.py")
