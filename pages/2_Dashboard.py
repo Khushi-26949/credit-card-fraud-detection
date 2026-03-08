@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 import os
+from fpdf import FPDF
+from datetime import datetime
 
 # --- PAGE TITLE ---
 st.markdown("<h2 style='color:#4CAF50;'>📊 Advanced Fraud Detection Dashboard</h2>", unsafe_allow_html=True)
@@ -20,6 +22,7 @@ if "user" not in st.session_state or not st.session_state.user:
 st.markdown("### 👤 My Transaction History")
 
 user_email = st.session_state.user["email"]
+user_name  = st.session_state.user["name"]
 
 if os.path.exists("user_history.json"):
     with open("user_history.json", "r") as f:
@@ -35,9 +38,170 @@ if os.path.exists("user_history.json"):
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Checks", len(df_user))
         col2.metric("🚨 Fraud", df_user[df_user["prediction"] == 1].shape[0])
-        col3.metric("✅ Safe", df_user[df_user["prediction"] == 0].shape[0])
-
+        col3.metric("✅ Safe",  df_user[df_user["prediction"] == 0].shape[0])
         st.dataframe(df_user)
+
+        # ------------------------------------------------------------
+        # 📄 PDF REPORT DOWNLOAD
+        # ------------------------------------------------------------
+        st.markdown("### 📄 Download Your Transaction Report")
+
+        if st.button("📥 Generate & Download PDF Report"):
+
+            total       = len(df_user)
+            fraud_count = df_user[df_user["prediction"] == 1].shape[0]
+            safe_count  = df_user[df_user["prediction"] == 0].shape[0]
+
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_auto_page_break(auto=True, margin=15)
+
+            # ── DARK NAVY HEADER BANNER ──────────────────────────────
+            pdf.set_fill_color(15, 32, 65)
+            pdf.rect(0, 0, 210, 40, style="F")
+            pdf.set_y(8)
+            pdf.set_font("Arial", "B", 20)
+            pdf.set_text_color(255, 255, 255)
+            pdf.cell(0, 10, "Credit Card Fraud Detection", ln=True, align="C")
+            pdf.set_font("Arial", "", 11)
+            pdf.set_text_color(160, 195, 255)
+            pdf.cell(0, 8, "Transaction Analysis Report", ln=True, align="C")
+            pdf.set_font("Arial", "I", 9)
+            pdf.set_text_color(130, 165, 220)
+            pdf.cell(0, 7, datetime.now().strftime("Generated on %d %B %Y at %H:%M"), ln=True, align="C")
+            pdf.ln(10)
+
+            # ── USER INFO CARD ───────────────────────────────────────
+            pdf.set_fill_color(235, 242, 255)
+            pdf.set_draw_color(80, 120, 200)
+            pdf.set_line_width(0.5)
+            y0 = pdf.get_y()
+            pdf.rect(10, y0, 190, 24, style="FD")
+            # left blue accent bar
+            pdf.set_fill_color(52, 120, 220)
+            pdf.rect(10, y0, 4, 24, style="F")
+            pdf.set_font("Arial", "B", 11)
+            pdf.set_text_color(15, 32, 65)
+            pdf.set_xy(18, y0 + 4)
+            pdf.cell(60, 7, f"Name  :  {user_name}")
+            pdf.set_font("Arial", "", 11)
+            pdf.set_xy(18, y0 + 13)
+            pdf.cell(0, 7, f"Email :  {user_email}", ln=True)
+            pdf.ln(8)
+
+            # ── SUMMARY STAT CARDS ───────────────────────────────────
+            pdf.set_font("Arial", "B", 13)
+            pdf.set_text_color(15, 32, 65)
+            pdf.cell(0, 9, "Summary", ln=True)
+            pdf.ln(2)
+
+            cards = [
+                ("Total Transactions", str(total),       (52,  152, 219), (41,  128, 185)),
+                ("Fraud Detected",     str(fraud_count), (231, 76,  60),  (192, 57,  43)),
+                ("Safe Transactions",  str(safe_count),  (46,  204, 113), (39,  174, 96)),
+            ]
+            card_w, gap = 58, 7
+            start_x = 12
+            for label, value, light, dark in cards:
+                y = pdf.get_y()
+                # card body
+                pdf.set_fill_color(*light)
+                pdf.rect(start_x, y, card_w, 24, style="F")
+                # top accent stripe
+                pdf.set_fill_color(*dark)
+                pdf.rect(start_x, y, card_w, 5, style="F")
+                # big number
+                pdf.set_font("Arial", "B", 20)
+                pdf.set_text_color(255, 255, 255)
+                pdf.set_xy(start_x, y + 5)
+                pdf.cell(card_w, 11, value, align="C")
+                # label
+                pdf.set_font("Arial", "", 9)
+                pdf.set_text_color(240, 240, 240)
+                pdf.set_xy(start_x, y + 16)
+                pdf.cell(card_w, 7, label, align="C")
+                start_x += card_w + gap
+
+            pdf.ln(30)
+
+            # ── TRANSACTION DETAILS TABLE ────────────────────────────
+            pdf.set_font("Arial", "B", 13)
+            pdf.set_text_color(15, 32, 65)
+            pdf.cell(0, 9, "Transaction Details", ln=True)
+            pdf.ln(2)
+
+            # header row
+            pdf.set_fill_color(15, 32, 65)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Arial", "B", 9)
+            col_w = [46, 30, 16, 28, 28, 32]
+            headers = ["Timestamp", "Amount (Rs)", "Hour", "Risk Score", "Result", "Flags"]
+            for i, h in enumerate(headers):
+                pdf.cell(col_w[i], 9, h, border=0, fill=True, align="C")
+            pdf.ln()
+
+            # rows
+            for idx, row in df_user.iterrows():
+                is_fraud = row.get("prediction") == 1
+
+                # alternating row background
+                if idx % 2 == 0:
+                    pdf.set_fill_color(245, 249, 255)
+                else:
+                    pdf.set_fill_color(255, 255, 255)
+
+                flags = []
+                if row.get("night_flag")  == 1: flags.append("Night")
+                if row.get("device_flag") == 1: flags.append("Dev")
+                if row.get("loc_flag")    == 1: flags.append("Loc")
+                if row.get("high_amt")    == 1: flags.append("Hi$")
+                flags_str = " ".join(flags) if flags else "-"
+
+                row_vals = [
+                    str(row.get("timestamp", ""))[:19],
+                    f"Rs {round(row.get('amount', 0), 2)}",
+                    str(row.get("hour", "")),
+                    f"{row.get('risk_score', 0)}%",
+                    "FRAUD" if is_fraud else "SAFE",
+                    flags_str,
+                ]
+
+                for i, val in enumerate(row_vals):
+                    if i == 4:  # Result column — coloured bold text
+                        pdf.set_text_color(192, 57, 43) if is_fraud else pdf.set_text_color(39, 174, 96)
+                        pdf.set_font("Arial", "B", 9)
+                    else:
+                        pdf.set_text_color(40, 40, 40)
+                        pdf.set_font("Arial", "", 9)
+                    pdf.cell(col_w[i], 8, val, border=0, fill=True, align="C")
+                pdf.ln()
+
+                # thin divider
+                pdf.set_draw_color(200, 215, 235)
+                pdf.line(12, pdf.get_y(), 198, pdf.get_y())
+
+            pdf.ln(8)
+
+            # ── FOOTER ───────────────────────────────────────────────
+            pdf.set_fill_color(15, 32, 65)
+            pdf.rect(0, 280, 210, 17, style="F")
+            pdf.set_y(284)
+            pdf.set_font("Arial", "I", 9)
+            pdf.set_text_color(160, 195, 255)
+            pdf.cell(0, 6, "Credit Card Fraud Detection System  |  For educational purposes only", align="C")
+
+            # save & offer download
+            pdf_path = "transaction_report.pdf"
+            pdf.output(pdf_path)
+            with open(pdf_path, "rb") as f:
+                st.download_button(
+                    label="📄 Click to Download PDF",
+                    data=f,
+                    file_name=f"fraud_report_{user_name}.pdf",
+                    mime="application/pdf"
+                )
+            st.success("✅ PDF Report ready!")
+
 else:
     st.info("ℹ No transaction history found.")
 
@@ -52,74 +216,51 @@ df = load_data()
 st.success("✅ Dataset Loaded Successfully!")
 
 # --------------------------------------------------------------------
-# 🔍 FILTER BAR (Top Controls)
+# 🔍 FILTER BAR
 # --------------------------------------------------------------------
 st.markdown("### 🔎 Filters")
 
 colf1, colf2, colf3 = st.columns(3)
-
-fraud_filter = colf1.selectbox("Filter by Class", ["All", "Normal", "Fraud"])
-hour_filter = colf2.slider("Filter by Hour Range", 0, 23, (0, 23))
+fraud_filter  = colf1.selectbox("Filter by Class", ["All", "Normal", "Fraud"])
+hour_filter   = colf2.slider("Filter by Hour Range", 0, 23, (0, 23))
 amount_filter = colf3.slider("Amount Range", 0, int(df["Amount"].max()), (0, int(df["Amount"].max())))
 
 filtered_df = df.copy()
-
 if fraud_filter != "All":
     filtered_df = filtered_df[filtered_df["Class"] == (1 if fraud_filter == "Fraud" else 0)]
-
 filtered_df = filtered_df[
-    (filtered_df["Hour"] >= hour_filter[0]) &
-    (filtered_df["Hour"] <= hour_filter[1]) &
-    (filtered_df["Amount"] >= amount_filter[0]) &
-    (filtered_df["Amount"] <= amount_filter[1])
+    (filtered_df["Hour"]   >= hour_filter[0])   & (filtered_df["Hour"]   <= hour_filter[1]) &
+    (filtered_df["Amount"] >= amount_filter[0]) & (filtered_df["Amount"] <= amount_filter[1])
 ]
 
 # --------------------------------------------------------------------
 # 📌 METRICS CARDS
 # --------------------------------------------------------------------
 st.markdown("### 📌 Key Metrics")
-
 col1, col2, col3, col4 = st.columns(4)
-
 col1.metric("Total Transactions", len(filtered_df))
 col2.metric("Normal", filtered_df[filtered_df["Class"] == 0].shape[0])
-col3.metric("Fraud", filtered_df[filtered_df["Class"] == 1].shape[0])
-
+col3.metric("Fraud",  filtered_df[filtered_df["Class"] == 1].shape[0])
 fraud_percent = round((filtered_df[filtered_df["Class"] == 1].shape[0] / len(filtered_df)) * 100, 2) if len(filtered_df) > 0 else 0
 col4.metric("Fraud %", f"{fraud_percent}%")
-
 st.markdown("---")
 
 # --------------------------------------------------------------------
-# 1️⃣ FRAUD vs NORMAL DISTRIBUTION
+# 1️⃣ FRAUD vs NORMAL PIE CHART
 # --------------------------------------------------------------------
 st.markdown("### 🔍 Fraud vs Normal Distribution")
-
 class_counts = filtered_df["Class"].value_counts().reset_index()
 class_counts.columns = ["Class", "Count"]
-
-fig1 = px.pie(
-    class_counts,
-    names="Class",
-    values="Count",
-    title="Fraud vs Normal Distribution",
-    color="Class",
-    hole=0.4
-)
+fig1 = px.pie(class_counts, names="Class", values="Count",
+              title="Fraud vs Normal Distribution", color="Class", hole=0.4)
 st.plotly_chart(fig1, use_container_width=True)
 
 # --------------------------------------------------------------------
-# 2️⃣ AMOUNT DISTRIBUTION CHART
+# 2️⃣ AMOUNT DISTRIBUTION
 # --------------------------------------------------------------------
 st.markdown("### 💰 Amount Distribution (Normal vs Fraud)")
-
-fig2 = px.box(
-    filtered_df,
-    x="Class",
-    y="Amount",
-    color="Class",
-    title="Amount Comparison: Normal vs Fraud"
-)
+fig2 = px.box(filtered_df, x="Class", y="Amount", color="Class",
+              title="Amount Comparison: Normal vs Fraud")
 st.plotly_chart(fig2, use_container_width=True)
 
 # --------------------------------------------------------------------
@@ -127,16 +268,10 @@ st.plotly_chart(fig2, use_container_width=True)
 # --------------------------------------------------------------------
 if "Hour" in df.columns:
     st.markdown("### ⏰ Transactions by Hour (Normal vs Fraud)")
-
     hourly = filtered_df.groupby("Hour")["Class"].value_counts().unstack(fill_value=0)
-
-    fig3 = px.line(
-        hourly,
-        x=hourly.index,
-        y=[0, 1],
-        labels={"value": "Count", "Hour": "Hour of Day"},
-        title="Hourly Transaction Trend"
-    )
+    fig3 = px.line(hourly, x=hourly.index, y=[0, 1],
+                   labels={"value": "Count", "Hour": "Hour of Day"},
+                   title="Hourly Transaction Trend")
     st.plotly_chart(fig3, use_container_width=True)
 else:
     st.warning("⚠ 'Hour' column not found in dataset.")
@@ -144,10 +279,9 @@ else:
 st.markdown("---")
 
 # --------------------------------------------------------------------
-# 4️⃣ HIGH RISK TRANSACTIONS TABLE
+# 4️⃣ HIGH RISK TABLE
 # --------------------------------------------------------------------
 st.markdown("### 🚨 Top 10 High Amount & High Risk Transactions")
-
 high_risk_df = filtered_df.sort_values(by="Amount", ascending=False).head(10)
 st.dataframe(high_risk_df)
 
