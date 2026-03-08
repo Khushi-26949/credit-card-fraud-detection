@@ -65,12 +65,10 @@ st.markdown("### 🔄 Auto-Fill Transaction (Using Dummy Dataset)")
 
 if st.button("Auto-Fill Random Transaction"):
     row = data.sample(1).iloc[0]
-
-    st.session_state.amount = float(row["Amount"])
-    st.session_state.hour = int(row["Hour"])
-    st.session_state.device = "Yes" if row["device_change"] == 1 else "No"
+    st.session_state.amount   = float(row["Amount"])
+    st.session_state.hour     = int(row["Hour"])
+    st.session_state.device   = "Yes" if row["device_change"] == 1 else "No"
     st.session_state.location = "Yes" if row["location_diff"] == 1 else "No"
-
     st.success("Random transaction loaded!")
 
 # ---------------------------------------------------
@@ -88,7 +86,6 @@ with st.container():
             step=1.0,
             value=st.session_state.get("amount", 0.0)
         )
-
         device = st.selectbox(
             "Device Changed?",
             ["No", "Yes"],
@@ -101,7 +98,6 @@ with st.container():
             0, 23,
             value=st.session_state.get("hour", 0)
         )
-
         location = st.selectbox(
             "Location Different?",
             ["No", "Yes"],
@@ -111,35 +107,49 @@ with st.container():
 # ---------------------------------------------------
 # Feature Flags
 # ---------------------------------------------------
-night_flag = 1 if (hour >= 23 or hour <= 6) else 0
+night_flag  = 1 if (hour >= 23 or hour <= 6) else 0
 device_flag = 1 if device == "Yes" else 0
-loc_flag = 1 if location == "Yes" else 0
-high_amt = 1 if amount > 10000 else 0
+loc_flag    = 1 if location == "Yes" else 0
+high_amt    = 1 if amount > 10000 else 0
 
 # ---------------------------------------------------
 # XAI Reasoning Function
 # ---------------------------------------------------
 def explain_transaction(amount, hour, night_flag, device_flag, loc_flag, high_amt):
     reasons = []
+    if high_amt:    reasons.append("💰 **High transaction amount detected**")
+    if night_flag:  reasons.append("🌙 **Transaction happened late at night**")
+    if device_flag: reasons.append("📱 **Device changed recently**")
+    if loc_flag:    reasons.append("📍 **Location mismatch detected**")
 
-    if high_amt:
-        reasons.append("💰 **High transaction amount detected**")
+    rule_score = (night_flag*20 + device_flag*20 + loc_flag*30 + high_amt*30)
 
-    if night_flag:
-        reasons.append("🌙 **Transaction happened late at night**")
-
-    if device_flag:
-        reasons.append("📱 **Device changed recently**")
-
-    if loc_flag:
-        reasons.append("📍 **Location mismatch detected**")
-
-    risk_score = (night_flag*20 + device_flag*20 + loc_flag*30 + high_amt*30)
-
-    if risk_score == 0:
+    if rule_score == 0:
         reasons.append("✔ **No suspicious behavior detected**")
 
-    return reasons, risk_score
+    return reasons, rule_score
+
+# ---------------------------------------------------
+# COMBINED PREDICTION FUNCTION
+# ---------------------------------------------------
+def get_final_prediction(model, input_data, rule_score):
+    """
+    Combines ML model probability + rule-based score.
+    Falls back to rule-only if model does not support predict_proba.
+    """
+    try:
+        # Try ML model probability (50% weightage)
+        model_proba = model.predict_proba(input_data)[0][1]
+        model_score = round(model_proba * 100)
+        final_score = round((model_score * 0.5) + (rule_score * 0.5))
+        method = "ML + Rules"
+    except Exception:
+        # Fallback — rule score only
+        final_score = rule_score
+        method = "Rules"
+
+    prediction = 1 if final_score >= 50 else 0
+    return prediction, final_score, method
 
 # ---------------------------------------------------
 # PREDICTION
@@ -150,10 +160,14 @@ if st.button("Predict Fraud Now"):
     with st.spinner("🔍 Analyzing transaction..."):
         time.sleep(1.5)
         input_data = np.array([[amount, hour, night_flag, device_flag, loc_flag, high_amt]])
-        prediction = model.predict(input_data)[0]
 
-    # XAI Reasoning
-    reasons, risk_score = explain_transaction(amount, hour, night_flag, device_flag, loc_flag, high_amt)
+        # XAI Reasoning + Rule Score
+        reasons, rule_score = explain_transaction(
+            amount, hour, night_flag, device_flag, loc_flag, high_amt
+        )
+
+        # Combined prediction
+        prediction, final_score, method = get_final_prediction(model, input_data, rule_score)
 
     # -------------------- OUTPUT --------------------
     st.subheader("🧾 Transaction Summary")
@@ -171,19 +185,20 @@ if st.button("Predict Fraud Now"):
         st.write("- " + r)
 
     # -------------------- RISK SCORE + GAUGE --------------------
-    st.markdown(f"### 🔥 Risk Score: **{risk_score}%**")
+    st.markdown(f"### 🔥 Risk Score: **{final_score}%**")
+    st.caption(f"Detection Method: {method}")
 
     fig_gauge = go.Figure(go.Indicator(
         mode="gauge+number",
-        value=risk_score,
+        value=final_score,
         title={"text": "Risk Score"},
         gauge={
             "axis": {"range": [0, 100]},
-            "bar": {"color": "red" if risk_score > 50 else "orange" if risk_score > 20 else "green"},
+            "bar": {"color": "red" if final_score > 50 else "orange" if final_score > 20 else "green"},
             "steps": [
-                {"range": [0, 30], "color": "#d4edda"},
+                {"range": [0, 30],  "color": "#d4edda"},
                 {"range": [30, 60], "color": "#fff3cd"},
-                {"range": [60, 100], "color": "#f8d7da"},
+                {"range": [60, 100],"color": "#f8d7da"},
             ],
         }
     ))
@@ -199,16 +214,16 @@ if st.button("Predict Fraud Now"):
     # SAVE HISTORY WITH TIMESTAMP
     # ---------------------------------------------------
     new_record = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "amount": amount,
-        "hour": hour,
-        "night_flag": night_flag,
+        "timestamp":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "amount":      amount,
+        "hour":        hour,
+        "night_flag":  night_flag,
         "device_flag": device_flag,
-        "loc_flag": loc_flag,
-        "high_amt": high_amt,
-        "prediction": int(prediction),
-        "risk_score": risk_score,
-        "reasons": reasons
+        "loc_flag":    loc_flag,
+        "high_amt":    high_amt,
+        "prediction":  int(prediction),
+        "risk_score":  final_score,
+        "reasons":     reasons
     }
 
     if user_email not in history_db:
