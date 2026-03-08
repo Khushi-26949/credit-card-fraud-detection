@@ -11,14 +11,17 @@
 
 ## 📸 Preview
 
-| Login & Auth | Fraud Detection | Dashboard |
-|---|---|---|
-| ![Login](screenshots/login.png) | ![Fraud](screenshots/fraud.png) | ![Dashboard](screenshots/dashboard.png) |
-
-| Admin Panel | PDF Report |
+| Login & Auth | Fraud Detection |
 |---|---|
-| ![Admin](screenshots/admin.png) | ![PDF](screenshots/pdf.png) |
+| ![Login](screenshots/Screenshot%202026-03-08%20185502.png) | ![Fraud](screenshots/Screenshot%202026-03-08%20185521.png) |
 
+| Dashboard | Admin Panel |
+|---|---|
+| ![Dashboard](screenshots/Screenshot%202026-03-08%20191817.png) | ![Admin](screenshots/Screenshot%202026-03-08%20192001.png) |
+
+| PDF Report |
+|---|
+| ![PDF](screenshots/Screenshot%202026-03-08%20191806.png) |
 ---
 
 ## ✨ Key Features
