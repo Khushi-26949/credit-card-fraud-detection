@@ -5,29 +5,19 @@ import pandas as pd
 import json
 import os
 import time
-import plotly.graph_objects as go
 from datetime import datetime
-
-# ---------------------------------------------------
-# Base Directory — works on any computer
-# ---------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "fraud_model (1).pkl")
-DATA_PATH = os.path.join(BASE_DIR, "cleaned_fraud_data2.xls")
 
 # ---------------------------------------------------
 # Load User Transaction History
 # ---------------------------------------------------
-HISTORY_PATH = os.path.join(BASE_DIR, "user_history.json")
-
 def load_history():
-    if not os.path.exists(HISTORY_PATH):
+    if not os.path.exists("user_history.json"):
         return {}
-    with open(HISTORY_PATH, "r") as f:
+    with open("user_history.json", "r") as f:
         return json.load(f)
 
 def save_history(history):
-    with open(HISTORY_PATH, "w") as f:
+    with open("user_history.json", "w") as f:
         json.dump(history, f, indent=4)
 
 history_db = load_history()
@@ -43,7 +33,7 @@ st.write("Check fraud automatically using dummy dataset OR enter custom values."
 # ---------------------------------------------------
 @st.cache_resource
 def load_model():
-    return joblib.load(MODEL_PATH)
+    return joblib.load(r"C:\Users\khush\OneDrive\Desktop\fraud_model (1).pkl")
 
 model = load_model()
 
@@ -52,7 +42,7 @@ model = load_model()
 # ---------------------------------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv(DATA_PATH)
+    return pd.read_csv(r"C:\Users\khush\OneDrive\Desktop\cleaned_fraud_data2.xls")
 
 data = load_data()
 
@@ -161,8 +151,10 @@ if st.button("Predict Fraud Now"):
         input_data = np.array([[amount, hour, night_flag, device_flag, loc_flag, high_amt]])
         prediction = model.predict(input_data)[0]
 
+    # XAI Reasoning
     reasons, risk_score = explain_transaction(amount, hour, night_flag, device_flag, loc_flag, high_amt)
 
+    # -------------------- OUTPUT --------------------
     st.subheader("🧾 Transaction Summary")
     st.write({
         "Amount": amount,
@@ -179,37 +171,14 @@ if st.button("Predict Fraud Now"):
 
     st.markdown(f"### 🔥 Risk Score: **{risk_score}%**")
 
-    if risk_score > 50:
-        bar_color = "red"
-        risk_label = "High Risk 🚨"
-    elif risk_score > 20:
-        bar_color = "orange"
-        risk_label = "Medium Risk ⚠️"
-    else:
-        bar_color = "green"
-        risk_label = "Low Risk ✅"
-
-    fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=risk_score,
-        title={"text": f"Risk Level — {risk_label}"},
-        gauge={
-            "axis": {"range": [0, 100]},
-            "bar": {"color": bar_color},
-            "steps": [
-                {"range": [0, 30], "color": "#d4edda"},
-                {"range": [30, 60], "color": "#fff3cd"},
-                {"range": [60, 100], "color": "#f8d7da"},
-            ],
-        }
-    ))
-    st.plotly_chart(fig_gauge, use_container_width=True)
-
     if prediction == 1:
         st.error("⚠ Fraud Detected — This transaction looks suspicious.")
     else:
         st.success("✔ Safe Transaction — No fraud detected.")
 
+    # ---------------------------------------------------
+    # SAVE HISTORY WITH TIMESTAMP
+    # ---------------------------------------------------
     new_record = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "amount": amount,
