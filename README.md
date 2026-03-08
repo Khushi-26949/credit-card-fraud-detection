@@ -13,7 +13,11 @@
 
 | Login & Auth | Fraud Detection | Dashboard |
 |---|---|---|
-| Secure login with attempt limiting | ML prediction + Risk Gauge | Plotly charts + PDF export |
+| ![Login](screenshots/login.png) | ![Fraud](screenshots/fraud.png) | ![Dashboard](screenshots/dashboard.png) |
+
+| Admin Panel | PDF Report |
+|---|---|
+| ![Admin](screenshots/admin.png) | ![PDF](screenshots/pdf.png) |
 
 ---
 
